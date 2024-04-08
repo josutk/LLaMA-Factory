@@ -3,12 +3,12 @@
 CUDA_VISIBLE_DEVICES=0 python ../../src/train_bash.py \
     --stage pt \
     --do_train \
-    --model_name_or_path meta-llama/Llama-2-7b-hf \
-    --dataset c4_demo \
-    --dataset_dir ../../data \
+    --model_name_or_path josu/gemma-pt-br3 \
+    --dataset brwac \
+    --dataset_dir /home/josu/hd/nlp/dataset_pt \
     --finetuning_type lora \
     --lora_target q_proj,v_proj \
-    --output_dir ../../saves/LLaMA2-7B/lora/pretrain \
+    --output_dir /home/josu/hd/nlp/ametista \
     --overwrite_cache \
     --overwrite_output_dir \
     --cutoff_len 1024 \
@@ -24,7 +24,7 @@ CUDA_VISIBLE_DEVICES=0 python ../../src/train_bash.py \
     --evaluation_strategy steps \
     --load_best_model_at_end \
     --learning_rate 5e-5 \
-    --num_train_epochs 3.0 \
+    --num_train_epochs 1.5 \
     --max_samples 10000 \
     --val_size 0.1 \
     --plot_loss \
