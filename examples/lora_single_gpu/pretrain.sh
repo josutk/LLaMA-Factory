@@ -3,12 +3,12 @@
 CUDA_VISIBLE_DEVICES=0 python ../../src/train_bash.py \
     --stage pt \
     --do_train \
-    --model_name_or_path josu/gemma-pt-br3 \
-    --dataset brwac \
-    --dataset_dir /home/josu/hd/nlp/dataset_pt \
+    --model_name_or_path josu/gemma-pt-br4 \
+    --dataset wiki_pt \
+    --dataset_dir /drive/MyDrive/pt_data/data/pt_wiki_corpus.txt \
     --finetuning_type lora \
     --lora_target q_proj,v_proj \
-    --output_dir /home/josu/hd/nlp/ametista \
+    --output_dir ametista \
     --overwrite_cache \
     --overwrite_output_dir \
     --cutoff_len 1024 \
@@ -25,7 +25,6 @@ CUDA_VISIBLE_DEVICES=0 python ../../src/train_bash.py \
     --load_best_model_at_end \
     --learning_rate 5e-5 \
     --num_train_epochs 1.5 \
-    --max_samples 10000 \
     --val_size 0.1 \
     --plot_loss \
     --fp16
