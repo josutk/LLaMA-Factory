@@ -17,7 +17,7 @@ from ..extras.logging import get_logger
 from ..extras.misc import get_current_device, infer_optim_dtype
 from ..extras.packages import is_flash_attn2_available
 from ..extras.patches.llama_patch import apply_llama_patch
-from .utils import QuantizationMethod, add_z3_leaf_module
+from .utils import QuantizationMethod, add_z3_leaf_module, gradient_checkpointing_enable
 
 
 if TYPE_CHECKING:
@@ -61,9 +61,7 @@ def _get_quantization_dataset(tokenizer: "PreTrainedTokenizer", model_args: "Mod
     return samples
 
 
-def _configure_attn_implementation(
-    config: "PretrainedConfig", model_args: "ModelArguments", init_kwargs: Dict[str, Any]
-) -> None:
+def _configure_attn_implementation(config: "PretrainedConfig", model_args: "ModelArguments") -> None:
     if model_args.flash_attn:
         if not is_flash_attn2_available():
             logger.warning("FlashAttention2 is not installed.")
@@ -73,9 +71,9 @@ def _configure_attn_implementation(
         if getattr(config, "model_type", None) == "internlm2":  # special case for custom models
             setattr(config, "attn_implementation", "flash_attention_2")
         else:
-            init_kwargs["attn_implementation"] = "flash_attention_2"
+            setattr(config, "_attn_implementation", "flash_attention_2")
     else:
-        init_kwargs["attn_implementation"] = "eager"
+        setattr(config, "_attn_implementation", "eager")
 
 
 def _configure_rope(config: "PretrainedConfig", model_args: "ModelArguments", is_trainable: bool) -> None:
@@ -133,12 +131,15 @@ def _configure_quantization(
         if is_deepspeed_zero3_enabled():
             raise ValueError("DeepSpeed ZeRO-3 is incompatible with quantized models.")
 
-        init_kwargs["device_map"] = {"": get_current_device()}
+        if model_args.quantization_device_map != "auto":
+            init_kwargs["device_map"] = {"": get_current_device()}
+
         quantization_config: Dict[str, Any] = getattr(config, "quantization_config", None)
         quant_method = quantization_config.get("quant_method", "")
 
         if quant_method == QuantizationMethod.GPTQ:
             require_version("auto_gptq>=0.5.0", "To fix: pip install auto_gptq>=0.5.0")
+            quantization_config.pop("disable_exllama", None)  # remove deprecated args
             quantization_config["use_exllama"] = False  # disable exllama
 
         if quant_method == QuantizationMethod.AWQ:
@@ -266,8 +267,8 @@ def _prepare_model_for_training(
         else:
             # use_reentrant=False might increase VRAM usage (have not been empirically verified yet)
             # According to: https://github.com/huggingface/transformers/issues/28339
+            model.gradient_checkpointing_enable = MethodType(gradient_checkpointing_enable, model)
             model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": True})
-            model.enable_input_require_grads()
             setattr(model.config, "use_cache", False)  # turn off when gradient checkpointing is enabled
             logger.info("Gradient checkpointing enabled.")
 
@@ -293,7 +294,7 @@ def patch_config(
     if model_args.compute_dtype is None:  # priority: bf16 > fp16 > fp32
         model_args.compute_dtype = infer_optim_dtype(model_dtype=getattr(config, "torch_dtype", None))
 
-    _configure_attn_implementation(config, model_args, init_kwargs)
+    _configure_attn_implementation(config, model_args)
     _configure_rope(config, model_args, is_trainable)
     _configure_longlora(config, model_args, is_trainable)
     _configure_quantization(config, tokenizer, model_args, init_kwargs)
@@ -316,12 +317,15 @@ def patch_config(
     if getattr(config, "model_type", None) == "qwen2" and is_trainable and model_args.flash_attn:
         setattr(config, "use_cache", False)  # qwen2 does not support use_cache when using flashattn
 
+    if getattr(config, "model_type", None) in ["mixtral", "qwen2_moe"] and is_trainable:
+        setattr(config, "output_router_logits", True)
+
     init_kwargs["torch_dtype"] = model_args.compute_dtype
     if not is_deepspeed_zero3_enabled():
         init_kwargs["low_cpu_mem_usage"] = model_args.low_cpu_mem_usage
         if init_kwargs["low_cpu_mem_usage"]:
-            if "device_map" not in init_kwargs:
-                init_kwargs["device_map"] = model_args.device_map or {"": get_current_device()}
+            if "device_map" not in init_kwargs and model_args.device_map:
+                init_kwargs["device_map"] = model_args.device_map
 
             if init_kwargs["device_map"] == "auto":
                 init_kwargs["offload_folder"] = model_args.offload_folder

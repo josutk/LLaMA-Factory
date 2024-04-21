@@ -5,7 +5,7 @@
   },
   "alpaca_zh": {
     "file_name": "alpaca_data_zh_51k.json",
-    "file_sha1": "0016a4df88f523aad8dc004ada7575896824a0dc"
+    "file_sha1": "2ba9827122c158dc256668d42bd1bcb8bc6b786e"
   },
   "alpaca_gpt4_en": {
     "file_name": "alpaca_gpt4_data_en.json",
@@ -317,6 +317,28 @@
     "hf_hub_url": "mlinmg/RLAIF-Nectar",
     "ms_hub_url": "AI-ModelScope/RLAIF-Nectar",
     "ranking": true
+  },
+  "dpo_mix_en": {
+    "hf_hub_url": "hiyouga/DPO-En-Zh-20k",
+    "subset": "en",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "response": "answer",
+      "system": "system",
+      "history": "history"
+    }
+  },
+  "dpo_mix_zh": {
+    "hf_hub_url": "hiyouga/DPO-En-Zh-20k",
+    "subset": "zh",
+    "ranking": true,
+    "columns": {
+      "prompt": "prompt",
+      "response": "answer",
+      "system": "system",
+      "history": "history"
+    }
   },
   "orca_dpo_de" : {
     "hf_hub_url": "mayflowergmbh/intel_orca_dpo_pairs_de",

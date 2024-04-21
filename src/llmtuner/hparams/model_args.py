@@ -55,7 +55,7 @@ class ModelArguments:
     )
     quantization_device_map: Optional[Literal["auto"]] = field(
         default=None,
-        metadata={"help": "Device map used for loading the 4-bit quantized model, needs bitsandbytes>=0.43.0."},
+        metadata={"help": "Device map used to infer the 4-bit quantized model, needs bitsandbytes>=0.43.0."},
     )
     rope_scaling: Optional[Literal["linear", "dynamic"]] = field(
         default=None,
@@ -63,11 +63,15 @@ class ModelArguments:
     )
     flash_attn: bool = field(
         default=False,
-        metadata={"help": "Enable FlashAttention-2 for faster training."},
+        metadata={"help": "Enable FlashAttention for faster training."},
     )
     shift_attn: bool = field(
         default=False,
         metadata={"help": "Enable shift short attention (S^2-Attn) proposed by LongLoRA."},
+    )
+    mixture_of_depths: Optional[Literal["convert", "load"]] = field(
+        default=None,
+        metadata={"help": "Convert the model to mixture-of-depths (MoD) or load the MoD model."},
     )
     use_unsloth: bool = field(
         default=False,
@@ -128,6 +132,10 @@ class ModelArguments:
     export_size: int = field(
         default=1,
         metadata={"help": "The file shard size (in GB) of the exported model."},
+    )
+    export_device: str = field(
+        default="cpu",
+        metadata={"help": "The device used in model export."},
     )
     export_quantization_bit: Optional[int] = field(
         default=None,
