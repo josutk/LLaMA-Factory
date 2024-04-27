@@ -419,7 +419,6 @@
     "ms_hub_url": "AI-ModelScope/mc4-pt-cleaned",
     "columns": {
       "prompt": "text"
-    },
-    "folder": "python"
+    }
   }
 }
