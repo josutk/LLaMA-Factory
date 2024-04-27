@@ -413,5 +413,13 @@
       "prompt": "content"
     },
     "folder": "python"
+  },
+  "c4": {
+    "hf_hub_url": "thegoodfellas/mc4-pt-cleaned",
+    "ms_hub_url": "AI-ModelScope/mc4-pt-cleaned",
+    "columns": {
+      "prompt": "text"
+    },
+    "folder": "python"
   }
 }
